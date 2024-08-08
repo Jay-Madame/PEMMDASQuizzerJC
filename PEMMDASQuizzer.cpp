@@ -1,7 +1,3 @@
-/*
-Contains Modulus Quizzer and PEMMDAS Quizzer
-*/
-
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
@@ -10,7 +6,7 @@ using namespace std;
 
 double modulusQuiz();
 double pemmdasQuiz();
-int solvingPemmdas(int *equation, int repeat, int);
+int solvingPemmdas(int *equation, int size);
 void printScores(vector<double> modulus, vector<double> pemmdas);
 
 int getRandomInt(int min, int max)
@@ -20,13 +16,12 @@ int getRandomInt(int min, int max)
 
 int operatorCase()
 {
-    int opp = rand() % 5 + 1;
-    return opp;
+    return rand() % 4 + 1;
 }
 
 int main()
 {
-    srand(time(0));
+    srand(static_cast<unsigned>(time(0)));
     char selection;
     vector<double> modulusScores;
     vector<double> pemmdasScores;
@@ -55,12 +50,12 @@ int main()
         case '3':
             printScores(modulusScores, pemmdasScores);
             break;
-        case '4':
-            return 0;
         default:
-            cout << " Please enter a valid entry.";
+            cout << " Please enter a valid entry." << endl;
         }
     } while (true);
+
+    return 0;
 }
 
 double modulusQuiz()
@@ -109,64 +104,56 @@ double pemmdasQuiz()
 
     while (times > 0)
     {
+        int *numbers = new int[9];
+        int *operators = new int[8];
+        int *equation = new int[17];
 
-        int *numbers = nullptr;
-        int *operators = nullptr;
-        int *equation = nullptr;
-        numbers = new int[9];
-        operators = new int[8];
-        equation = new int[17];
+        int nindex = 0, oindex = 0;
 
         for (int i = 0; i < 9; i++)
         {
-            *(numbers + i) = getRandomInt(1, 20);
+            numbers[i] = getRandomInt(1, 20);
         }
         for (int i = 0; i < 8; i++)
         {
-            *(operators + i) = operatorCase();
+            operators[i] = operatorCase();
         }
 
         cout << "What is: ";
-
-        int nindex, oindex = 0;
 
         for (int i = 0; i < 17; i++)
         {
             if (i % 2 == 0)
             {
-                cout << *(numbers + nindex);
-                *(equation + i) = *(numbers + nindex);
+                cout << numbers[nindex];
+                equation[i] = numbers[nindex];
                 nindex++;
             }
             else
             {
-                *(equation + i) = *(operators + oindex);
+                equation[i] = operators[oindex];
                 switch (operators[oindex])
                 {
                 case 1:
                     cout << " % ";
-                    oindex++;
                     break;
                 case 2:
                     cout << " / ";
-                    oindex++;
                     break;
                 case 3:
                     cout << " * ";
-                    oindex++;
                     break;
                 case 4:
                     cout << " + ";
-                    oindex++;
                     break;
                 default:
                     cout << " - ";
-                    oindex++;
                     break;
                 }
+                oindex++;
             }
         }
-        canswer = solvingPemmdas(equation, 17, 1);
+        canswer = solvingPemmdas(equation, 17);
 
         cout << " = ?" << endl;
         cin >> answer;
@@ -179,6 +166,7 @@ double pemmdasQuiz()
         {
             cout << "The correct answer is " << canswer << endl;
         }
+
         delete[] equation;
         delete[] numbers;
         delete[] operators;
@@ -191,76 +179,68 @@ double pemmdasQuiz()
 
     return percent;
 }
-
-int solvingPemmdas(int *equation, int size, int repeat)
+int solvingPemmdas(int *equation, int size)
 {
-    int *newProb = new int[size];
+    if (size == 1)
+    {
+        return equation[0];
+    }
 
+    // check for multiplication, division, and subtraction
     for (int i = 0; i < size; i++)
     {
-        newProb[i] = equation[i];
+        if (equation[i] == 1 || equation[i] == 2 || equation[i] == 3)
+        {
+            int result = 0;
+            switch (equation[i])
+            {
+            case 1: // %
+                result = equation[i - 1] % equation[i + 1];
+                break;
+            case 2: // /
+                result = equation[i - 1] / equation[i + 1];
+                break;
+            case 3: // *
+                result = equation[i - 1] * equation[i + 1];
+                break;
+            }
+
+            for (int j = i - 1; j < size - 2; j++)
+            {
+                equation[j] = equation[j + 2];
+            }
+            equation[i - 1] = result;
+            size -= 2;
+            return solvingPemmdas(equation, size);
+        }
     }
 
-    int count = 0;
+    // check for add or subtract
     for (int i = 0; i < size; i++)
     {
-        if ((repeat == 1) || (i % 2 != 0))
+        if (equation[i] == 4 || equation[i] == 5)
         {
-            count = i - 1;
-
-            if (equation[i] == 1 || equation[i] == 2 || equation[i] == 3)
+            int result = 0;
+            switch (equation[i])
             {
-                switch (equation[i])
-                {
-                case 1:
-                    newProb[count] = equation[count] % equation[i + 1];
-                    break;
-                case 2:
-                    newProb[count] = equation[count] / equation[i + 1];
-                    break;
-                case 3:
-                    newProb[count] = equation[count] * equation[i + 1];
-                    break;
-                }
+            case 4: // +
+                result = equation[i - 1] + equation[i + 1];
+                break;
+            case 5: // -
+                result = equation[i - 1] - equation[i + 1];
+                break;
             }
-        }
-        else
-        {
-            count = i - 1;
 
-            if (equation[i] == 4 || equation[i] == 5)
+            for (int j = i - 1; j < size - 2; j++)
             {
-                switch (equation[i])
-                {
-                case 4:
-                    newProb[count] = equation[count] + equation[i + 1];
-                    break;
-                case 5:
-                    newProb[count] = equation[count] - equation[i + 1];
-                    break;
-                }
+                equation[j] = equation[j + 2];
             }
-        }
-
-        if (i % 2 == 0)
-        {
-            newProb[i] = equation[count];
+            equation[i - 1] = result;
+            size -= 2;
+            return solvingPemmdas(equation, size);
         }
     }
-
-    if (size > 3)
-    {
-        solvingPemmdas(newProb, size - 2, 2);
-    }
-    else
-    {
-        int answer = newProb[0];
-
-        delete[] newProb;
-        return answer;
-    }
-
-    delete[] newProb;
+    return equation[0];
 }
 
 void printScores(vector<double> modulus, vector<double> pemmdas)
